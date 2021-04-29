@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Header from './components/Header';
 import Tasks from './components/Tasks';
@@ -8,44 +8,75 @@ import './App.css';
 
 function App() {
   const [showAddTask, setShowAddTask] = useState(false);
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      text: 'Doctors Appointment',
-      day: 'Feb 5th at 2:30pm',
-      reminder: true,
-    },
-    {
-      id: 2,
-      text: 'Meeting at School',
-      day: 'Feb 6th at 1:30pm',
-      reminder: true,
-    },
-    {
-      id: 3,
-      text: 'Food for Shopping',
-      day: 'Feb 5th at 2:30pm',
-      reminder: false,
-    },
-  ]);
+  const [tasks, setTasks] = useState([]);
 
-  const onDeleteTaskHandler = (id) => {
+  useEffect(() => {
+    const getTasks = async () => {
+      const tasksFromServer = await fetchTasks();
+      setTasks(tasksFromServer);
+    };
+
+    getTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    const res = await fetch('http://localhost:5000/tasks');
+    const data = await res.json();
+    return data;
+  };
+
+  const fetchTask = async (id) => {
+    const res = await fetch(`http://localhost:5000/tasks/${id}`);
+    const data = await res.json();
+    return data;
+  };
+
+  const addTaskHandler = async (task) => {
+    const res = await fetch(`http://localhost:5000/tasks`, {
+      method: 'POST',
+      headers: {
+        // This is to specify content type
+        'Content-type': 'application/json',
+      },
+      // Turning from JavaScript Object to into JSON string
+      body: JSON.stringify(task),
+    });
+
+    const dataTask = await res.json();
+
+    setTasks((prevTask) => [...prevTask, dataTask]);
+
+    // const taskId = Math.floor(Math.random() * 10000) + 1;
+    // const newTask = { taskId, ...task };
+    // setTasks((prevTask) => [...prevTask, newTask]);
+  };
+
+  const onDeleteTaskHandler = async (id) => {
+    await fetch(`http://localhost:5000/tasks/${id}`, {
+      method: 'DELETE',
+    });
     const filterTask = tasks.filter((task) => task.id !== id);
     setTasks(filterTask);
   };
 
-  const toggleReminderHandler = (id) => {
+  const toggleReminderHandler = async (id) => {
+    const taskToToggle = await fetchTask(id);
+    const updatedTask = { ...taskToToggle, reminder: !taskToToggle.reminder };
+
+    const res = await fetch(`http://localhost:5000/tasks/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-type': 'application/json',
+      },
+      body: JSON.stringify(updatedTask),
+    });
+
+    const taskData = await res.json();
+
     const taskReminder = tasks.map((task) =>
-      task.id === id ? { ...task, reminder: !task.reminder } : task
+      task.id === id ? { ...task, reminder: taskData.reminder } : task
     );
     setTasks(taskReminder);
-  };
-
-  const addTaskHandler = (task) => {
-    const taskId = Math.floor(Math.random() * 10000) + 1;
-    const newTask = { taskId, ...task };
-
-    setTasks((prevTask) => [...prevTask, newTask]);
   };
 
   let taskContent = <p>No Tasks Found</p>;
