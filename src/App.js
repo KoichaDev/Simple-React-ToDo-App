@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-
+import { BrowserRouter as Router, Route } from 'react-router-dom';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import Tasks from './components/Tasks';
 import AddTask from './components/AddTask';
+import About from './components/About';
 
 import './App.css';
 
@@ -92,12 +94,15 @@ function App() {
   }
 
   return (
-    <div className='container'>
-      <Header onAddHandler={() => setShowAddTask(!showAddTask)} showAddTask={showAddTask} />
-      {showAddTask && <AddTask onTaskHandler={addTaskHandler} />}
-
-      {taskContent}
-    </div>
+    <Router>
+      <div className='container'>
+        <Header onAddHandler={() => setShowAddTask(!showAddTask)} showAddTask={showAddTask} />
+        {showAddTask && <AddTask onTaskHandler={addTaskHandler} />}
+        <Route path='/' exact render={(props) => <>{taskContent}</>} />
+        <Route path='/about' component={About} />
+        <Footer />
+      </div>
+    </Router>
   );
 }
 
